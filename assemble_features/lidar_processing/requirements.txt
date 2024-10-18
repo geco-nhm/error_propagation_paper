@@ -1,0 +1,5 @@
+pdal
+gdal
+notebook
+ipykernel
+python-pdal

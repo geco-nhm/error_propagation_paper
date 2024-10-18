@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  lidar_processing:
+    build: .
+    image: lidar_processing:latest
+    environment:
+      JUPYTER_ENABLE_LAB: 'yes'
+    ports:
+      - "8888:8888"
+    # entrypoint: bin/bash  # here we define how to interact with docker, we can either run a python file directly or through bash environment
+    stdin_open: true
+    #command: ['python', '/src/main.py']   # run in execution mode - docker executes and closes
+    command: ['tail', '-f', '/dev/null']   # run in developer mode
+    tty: true
+    deploy:
+        resources:
+            limits:
+              cpus: '30.0'
+              memory: 100G
+            reservations:
+              cpus: '0.25'
+              memory: 128M
+    volumes:
+     - /mnt/c/DRONE/INPUT:/src/input
+     - /mnt/c/DRONE/OUTPUT:/src/output
+     - .:/src

@@ -1,0 +1,14 @@
+{
+    "pipeline": [
+        "ground/ground_dtm_tolga_test0_0.laz",
+        {
+            "type": "writers.gdal",
+            "filename": "ground/ground_dtm_tolga_test0_0.tif", 
+            "output_type":"idw",
+            "gdaldriver":"GTiff",
+            "resolution": "0.5",
+            "radius": 1
+    
+        }  
+      ]
+}
