@@ -127,7 +127,7 @@ conversion_list <- list()
 
 #Import files with class names and store them in a list
 for (i in 1:length(file_paths)) {
-  conversion_list[[i]] <- as.data.frame(read_xlsx(file_paths[i]))
+  conversion_list[[i]] <- as.data.frame(readxl::read_xlsx(file_paths[i]))
 }
 
 #Specify file paths
@@ -138,8 +138,11 @@ conversion_schemes <- list()
 
 #Import files with class names and store them in a list
 for (i in 1:length(file_paths)) {
-  conversion_schemes[[i]] <- colnames(as.data.frame(read_xlsx(file_paths[i])))
+  conversion_schemes[[i]] <- colnames(as.data.frame(readxl::read_xlsx(file_paths[i])))
 }
+
+#Save data frame
+validation_distance <- read.csv("data/processed/test/test_data_distance.csv")
 
 #Import test data
 test_data <- read.csv("data/processed/test/test_data.csv")[-c(1)]
@@ -290,10 +293,13 @@ spatial_error <- as.data.frame(matrix(NA, nrow(output_matrix), nrow(test_data)))
 #Create data frame for storing spatial ecological distance results
 spatial_ED <- as.data.frame(matrix(NA, nrow(output_matrix), nrow(test_data)))
 
+#Create data frame for storing validation distance
+spatial_distance <- as.data.frame(matrix(NA, nrow(output_matrix), nrow(test_data)))
+
 #Create list for storing confusion matrices
 confusion_list <- list()
 
-#Soecify start row
+#Specify start row
 start_row <- 1
 
 #Specify end row
@@ -352,19 +358,23 @@ for (i in start_row:end_row) {
   output_matrix$interpreter_ED[i] <- sum(confusion_matrix*ED_matrix)/sum(confusion_matrix)
   
   #Store the number of classes
-  output_matrix$interpreter_classes[i] <- length(levels(interpreter_vector))
+  output_matrix$interpreter_classes[i] <- length(unique(interpreter_vector))
   
   #Compute error for each test point
   spatial_error[i,] <- as.numeric(interpreter_vector == test)
   
   #Compute ecological distance for each test point
   spatial_ED[i,] <- sapply(1:length(test), compute.ED, test_data, test_column, interpreter_vector)
+  
+  #Insert validation distance
+  spatial_distance[i,] <- validation_distance[, paste0(interpreter, "_dist")]
 }
 
 #Save files
-#write.csv(output_matrix, "results/interpreter_results.csv")
-#write.csv(spatial_error, "results/spatial_interpreter_error.csv")
-#write.csv(spatial_ED, "results/spatial_interpreter_ED.csv")
+write.csv(output_matrix, "results_ijrs/interpreter_results.csv")
+write.csv(spatial_error, "results_ijrs/spatial_interpreter_error.csv")
+write.csv(spatial_distance, "results_ijrs/spatial_interpreter_distance2.csv")
+write.csv(spatial_ED, "results_ijrs/spatial_interpreter_ED.csv")
 
 #Save confusion matrices
-#saveRDS(confusion_list, "results/interpreter_confusion.rds")
+saveRDS(confusion_list, "results_ijrs/interpreter_confusion.rds")

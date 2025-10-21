@@ -99,7 +99,7 @@ for (i in 1:length(spatial_resolution)) {
   cell_number <- cellFromXY(raster_list[[i]], coords)
   
   #Extract feature data for vector layer
-  data_list[[i]] <- data.frame(ID = cell_number, extract(raster_list[[i]], cell_number))
+  data_list[[i]] <- data.frame(ID = cell_number, terra::extract(raster_list[[i]], cell_number))
   
   #Rename the columns
   colnames(data_list[[i]]) <- paste(colnames(data_list[[i]]), "_", spatial_resolution[i], sep = "")
@@ -109,10 +109,10 @@ for (i in 1:length(spatial_resolution)) {
 test_data <- cbind(data_frame, do.call(cbind, data_list))
 
 #Save data frame
-write.csv(test_data, "data/processed/test/test_data.csv")
+write.csv(test_data, "data/processed/test/test_data_new.csv")
 
 #Removing irrelevant columns
 vector_layer <- vector_layer[,c("fid","gtype1_5","gtype1_20","htype1","htypegr1")]
 
 #Save vector layer
-st_write(vector_layer, dsn = "data/processed/test/", layer = "test_points.shp", driver = "ESRI Shapefile", append = FALSE)
+st_write(vector_layer, dsn = "data/processed/test/", layer = "test_points_new.shp", driver = "ESRI Shapefile", append = FALSE)

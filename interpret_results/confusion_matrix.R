@@ -20,7 +20,7 @@ round.number <- function(x) {
 }
 
 #Function to aggregate confusion matrices
-confusion.matrix <- function(spatial_scale, hierarchical_level, ED_matrix, confusion_list, data, progress = T, filename) {
+confusion.matrix <- function(spatial_scale, hierarchical_level, ED_matrix, confusion_list, data, progress = TRUE, filename) {
   
   #Create matrix for storing confusion matrices
   confusion_matrix <- matrix()
@@ -223,16 +223,16 @@ for (i in 1:length(file_paths)) {
 }
 
 #Import confusion matrices for classifiers
-classifier_confusion <- readRDS("results/classifier_confusion.rds")
+classifier_confusion <- readRDS("results_ijrs/classifier_confusion2.rds")
 
 #Import confusion matrices for interpreters
-interpreter_confusion <- readRDS("results/interpreter_confusion.rds")
+interpreter_confusion <- readRDS("results_ijrs/interpreter_confusion.rds")
 
 #Import model results
-data <- read.csv("results/results.csv")[,-c(1)]
+data <- read.csv("results_ijrs/results.csv")[,-c(1)]
 
 #Import interpreter results
-interpreter_data <- read.csv("results/interpreter_results.csv")[,-c(1)]
+interpreter_data <- read.csv("results_ijrs/interpreter_results.csv")[,-c(1)]
 
 #Specify levels
 level_scale <- c("gtype1_20","gtype1_5","htype1","htypegr1")
@@ -240,11 +240,12 @@ level_hierarchical <- c("gtype1","gtype1","htype1","htypegr1")
 level_spatial <- c(20,5,NA,NA)
 
 #Aggregate and save confusion matrices for classifiers and interpreters
-for (i in 1:length(level_hierarchical)) {
+for (i in 3) {
   
   #Aggregate confusion matrices for classifiers
-  aggregated_table <- confusion.matrix(level_spatial[i], level_hierarchical[i], conversion_list[[i]], classifier_confusion, data, progress = FALSE, filename = paste("confusion_classifiers_",level_scale[i], sep = ""))
+  aggregated_table <- confusion.matrix(level_spatial[i], level_hierarchical[i], conversion_list[[i]], classifier_confusion, data, progress = TRUE, filename = paste("confusion_classifiers_",level_scale[i], sep = ""))
   
   #Aggregate confusion matrices for interpreters
-  aggregated_table <- confusion.matrix(level_spatial[i], level_hierarchical[i], conversion_list[[i]], interpreter_confusion, interpreter_data, progress = FALSE, filename = paste("confusion_interpreters_",level_scale[i], sep = ""))
+  aggregated_table <- confusion.matrix(level_spatial[i], level_hierarchical[i], conversion_list[[i]], interpreter_confusion, interpreter_data, progress = TRUE, filename = paste("confusion_interpreters_",level_scale[i], sep = ""))
+  
 }

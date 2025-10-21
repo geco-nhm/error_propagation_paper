@@ -182,7 +182,7 @@ for (i in 1:number_blocks) {
   
   #Identify cells within the block
   within_block <- which(!is.na(block_raster[]))
-  print(length(within_block))
+  
   #Create a sample within the block 
   sample_block <- sample(within_block, sample_size, replace = FALSE)
   
@@ -242,7 +242,10 @@ for (i in 1:length(interpreters)) {
   
   #Rename the columns
   colnames(data_list[[i]][[j]]) <- paste(colnames(data_list[[i]][[j]]),"_",interpreters[i], sep = "")
+  
+  print(i/length(interpreters))
 }
+  print(j/length(coords_block))
 }
 
 #Bind the nested lists together
@@ -337,6 +340,87 @@ for (j in 1:length(coords_block)) {
 #Bind the nested lists together
 feature_matrices <- do.call(Map, c(cbind, data_list))
 
+
+#Create list for storing distance data
+distance_list <- list(list(),
+                      list(),
+                      list(),
+                      list(),
+                      list(),
+                      list(),
+                      list(),
+                      list(),
+                      list(),
+                      list(),
+                      list(),
+                      list(),
+                      list(),
+                      list())
+
+#Sety names on consensus maps
+consensus <- c("X5","X20")
+
+#Create list for storing vector layers
+consensus_list <- list()
+
+#Import and reproject vector data
+for (i in 1:length(consensus)) {
+  
+  #Import vectors
+  consensus_list[[i]] <- st_read(dsn = "consensus/", layer = consensus[i])
+  
+  #Reproject vectors
+  consensus_list[[i]] <- st_transform(consensus_list[[i]], crs = "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs")
+}
+
+#Bind consensus and interpreters
+interpreter_list[[13]] <- consensus_list[[1]]
+interpreter_list[[14]] <- consensus_list[[2]]
+names(interpreter_list) <- c("A5","F5","D5","C5","B5","E5","I20","K20","H20","G20","L20","J20","X5","X20")
+
+#Assemble feature data for spatial resolutions in each block
+for (j in 1:length(coords_block)) {
+  for (i in 1:length(interpreters)) {
+    
+    #Select interpreter
+    current_interpreter <- interpreter_list[[interpreters[i]]]
+    
+    #Specify coordinates for the block
+    coords <- coords_block[[j]] %>% as.data.frame()
+    
+    #Convert to sf POINTS
+    points_sf <- st_as_sf(coords, coords = c("x", "y"), crs = st_crs(current_interpreter))
+    
+    # Get only the polygon boundaries as LINESTRINGs
+    polygon_boundaries <- st_boundary(current_interpreter)
+    
+    # Compute distances: returns a matrix [n_points x n_polygons]
+    dist_matrix <- st_distance(points_sf, polygon_boundaries)
+    
+    # Get the minimum distance for each point to any polygon
+    min_distances <- apply(dist_matrix, 1, min)
+    
+    # Combine with points if needed
+    result <- cbind(coords, as.numeric(min_distances))
+    
+    #Rename column
+    colnames(result) <- c("x", "y", paste0(interpreters[i],"_dist"))
+
+    #Extract feature data from the block coordinates
+    distance_list[[i]][[j]] <- result
+    
+    print(i/length(interpreters))
+    
+  }
+}
+
+#Bind the nested lists together
+distance_matrices <- do.call(Map, c(cbind, distance_list))
+
+for (j in 1:length(coords_block)) {
+distance_matrices[[j]] <- distance_matrices[[j]][,grep(pattern = "dist", colnames(distance_matrices[[j]]))]
+}
+
 #Create list for storing training data blocks
 training_list <- list()
 
@@ -344,10 +428,10 @@ training_list <- list()
 for (i in 1:length(coords_block)) {
   
   #Bind target and feature data
-  training_list[[i]] <- cbind(target_matrices[[i]],feature_matrices[[i]])
+  training_list[[i]] <- cbind(target_matrices[[i]],feature_matrices[[i]], distance_matrices[[i]])
   
   #Save file
-  write.csv(training_list[[i]], paste("data/processed/training/training_data_",i,".csv", sep = ""))
+  write.csv(training_list[[i]], paste("data/processed/training/training_data2_",i,".csv", sep = ""))
 }
 
 #Create list for storing ensemble training data sets
@@ -362,5 +446,27 @@ for (i in 1:length(ensemble_list)) {
   training_data <- do.call(rbind, lapply(ensemble_list[[i]], function(x){training_list[[x]]}))
   
   #Save file
-  write.csv(training_data, paste("data/processed/training/training_data_",paste(ensemble_list[[i]],collapse = ""),".csv", sep = ""))
+  write.csv(training_data, paste("data/processed/training/training_data2_",paste(ensemble_list[[i]],collapse = ""),".csv", sep = ""))
 }
+
+
+
+#Buffering analysis
+#Create a matrix to store classifier error for different buffers
+buffer_matrix <- matrix(data = NA, nrow = nrow(spatial_error), ncol = 31) %>% as.data.frame()
+colnames(buffer_matrix) <- 0:30
+
+#Computing classifier error for buffers of 1-20 m
+for (j in 13:nrow(buffer_matrix)) {
+  for (i in 1:ncol(buffer_matrix)) {
+    
+    buffered <- st_buffer(interpreter_list[[j]], dist = 1 - i)
+    buffer_matrix[j,i] <- sum(st_area(buffered))
+    print(i/ncol(buffer_matrix))
+  }
+  print(j/nrow(buffer_matrix))
+}
+
+proportion_matrix <- buffer_matrix / buffer_matrix[, 1]
+
+write.csv(proportion_matrix, "results_ijrs/proportion_matrix.csv")

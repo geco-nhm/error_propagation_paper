@@ -70,16 +70,16 @@ for (i in 1:length(file_paths)) {
 }
 
 #Import confusion matrices for classifiers
-classifier_confusion <- readRDS("results/classifier_confusion.rds")
+classifier_confusion <- readRDS("results_ijrs/classifier_confusion2.rds")
 
 #Import confusion matrices for interpreters
-interpreter_confusion <- readRDS("results/interpreter_confusion.rds")
+interpreter_confusion <- readRDS("results_ijrs/interpreter_confusion.rds")
 
 #Import model results
-classfier_data <- read.csv("results/results.csv")[,-c(1)]
+classfier_data <- read.csv("results_ijrs/results.csv")[,-c(1)]
 
 #Import model results
-interpreter_data <- read.csv("results/interpreter_results.csv")[,-c(1)]
+interpreter_data <- read.csv("results_ijrs/interpreter_results.csv")[,-c(1)]
 
 #Create a data frame with all combinations of interpreters and hierarchical levels
 data_frame_classifier <- interpreter_data[,1:2]
@@ -111,8 +111,9 @@ for (h in 1:nrow(data_frame_classifier)) {
   rows <- interpreter_rows[which(interpreter_rows %in% hierarchicallevel_rows)]
   
   #Aggregate confusion matrices for classifiers
-  aggregated_classifier_list[[h]] <- confusion.matrix(conversion_scheme, classifier_confusion, rows, progress = F)
-}
+  aggregated_classifier_list[[h]] <- confusion.matrix(conversion_scheme, classifier_confusion, rows, progress = TRUE)
+
+  }
 
 #Create data frame with all combinations of interpreters and hierarchical levels
 data_frame_interpreter <- interpreter_data[,1:2]
@@ -140,7 +141,7 @@ for (h in 1:nrow(data_frame_interpreter)) {
   rows <- h
   
   #Aggregate confusion matrices for classifiers
-  aggregated_interpreter_list[[h]] <- confusion.matrix(conversion_scheme, interpreter_confusion, rows, progress = F)
+  aggregated_interpreter_list[[h]] <- confusion.matrix(conversion_scheme, interpreter_confusion, rows, progress = TRUE)
 }
 
 #Create column for correlation estimates for each interpreter hierarchical level combination

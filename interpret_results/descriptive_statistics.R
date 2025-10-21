@@ -199,7 +199,7 @@ data$nodesize <- factor(data$nodesize,
 #Rename and reorder ensemble levels
 data$ensemble <- factor(data$ensemble, 
                         levels = c("1","2","3","4","5","6","7"), 
-                        labels = c("Block 1","Block 2","Block 3","Block 4","Block 1:2","Block 3:4","Block 1:4"))
+                        labels = c("Block 1","Block 1","Block 1","Block 1","Block 2","Block 2","Block 3"))
 
 #Rename and reorder sample size levels
 data$samplesize <- factor(data$samplesize, 
@@ -275,7 +275,7 @@ data$interpreter <- factor(data$interpreter,
                            labels = c("X5","A5","B5","C5","D5","E5","F5","X20","G20","H20","I20","J20","K20","L20"))
 
 #Rename columns
-colnames(data) <- c("Interpreter", "Hierarchical level", "Map scale", "Interpreter error", "Interpreter ED", "Interpreter classes", "Experience level")
+colnames(data) <- c("Interpreter", "Hierarchical level", "Sampling extent", "Map scale", "Interpreter error", "Interpreter ED", "Interpreter classes", "Experience level")
 
 #Create table
 create.descriptive.table(data,
@@ -399,3 +399,80 @@ t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
 vector_1 <- data$`Interpreter error`[which(data$`Experience level` == "Experienced")]
 vector_2 <- data$`Interpreter error`[which(data$`Experience level` == "Intermediate")]
 t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+
+
+#Hypothesis tests
+vector_1 <- data$`Classifier error`[which(data$`Hierarchical level` == "Minor type")]
+vector_2 <- data$`Classifier error`[which(data$`Hierarchical level` == "Major type")]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+vector_1 <- data$`Classifier error`[which(data$`Hierarchical level` == "Minor type")]
+vector_2 <- data$`Classifier error`[which(data$`Hierarchical level` == "Major-type group")]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+vector_1 <- data$`Classifier error`[which(data$`Hierarchical level` == "Major type")]
+vector_2 <- data$`Classifier error`[which(data$`Hierarchical level` == "Major-type group")]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+vector_1 <- data$`Classifier error`[which(data$`Map scale` == "1:20 000")[which(data$`Map scale` == "1:20 000") %in% which(data$`Hierarchical level` == "Minor type")]]
+vector_2 <- data$`Classifier error`[which(data$`Map scale` == "1:5000")[which(data$`Map scale` == "1:5000") %in% which(data$`Hierarchical level` == "Minor type")]]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+vector_1 <- data$`Classifier error`[which(data$`Map scale` == "1:20 000")[which(data$`Map scale` == "1:20 000") %in% which(data$`Hierarchical level` == "Major type")]]
+vector_2 <- data$`Classifier error`[which(data$`Map scale` == "1:5000")[which(data$`Map scale` == "1:5000") %in% which(data$`Hierarchical level` == "Major type")]]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+vector_1 <- data$`Classifier error`[which(data$`Map scale` == "1:20 000")[which(data$`Map scale` == "1:20 000") %in% which(data$`Hierarchical level` == "Major-type group")]]
+vector_2 <- data$`Classifier error`[which(data$`Map scale` == "1:5000")[which(data$`Map scale` == "1:5000") %in% which(data$`Hierarchical level` == "Major-type group")]]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+data_mtg <- data[which(data$`Hierarchical level` == "Major-type group"),]
+
+#Hypothesis tests
+vector_1 <- data_mtg$`Classifier error`[which(data_mtg$`Spatial resolution` == "6 m")]
+vector_2 <- data_mtg$`Classifier error`[which(data_mtg$`Spatial resolution` == "3 m")]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+vector_1 <- data_mtg$`Classifier error`[which(data_mtg$`Spatial resolution` == "1.5 m")]
+vector_2 <- data_mtg$`Classifier error`[which(data_mtg$`Spatial resolution` == "3 m")]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+
+data <- data[which(data$`Hierarchical level` == "Minor type"),]
+
+#Hypothesis tests
+vector_1 <- data$`Classifier error`[which(data$`Model complexity` == "50%")]
+vector_2 <- data$`Classifier error`[which(data$`Model complexity` == "25%")]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+vector_1 <- data$`Classifier error`[which(data$`Model complexity` == "25%")]
+vector_2 <- data$`Classifier error`[which(data$`Model complexity` == "10% ")]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+#Hypothesis tests
+vector_1 <- data$`Classifier error`[which(data$`Sampling density` == "1%")]
+vector_2 <- data$`Classifier error`[which(data$`Sampling density` == "10%")]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+vector_1 <- data$`Classifier error`[which(data$`Sampling density` == "10%")]
+vector_2 <- data$`Classifier error`[which(data$`Sampling density` == "100%")]
+t.test(vector_1, vector_2, alternative = "two.sided", paired = TRUE)
+
+#Hypothesis tests
+vector_1 <- data$`Classifier error`[which(data$`Block set` == "Block 1")]
+vector_2 <- data$`Classifier error`[which(data$`Block set` == "Block 2")]
+t.test(vector_1, vector_2, alternative = "two.sided")
+
+vector_1 <- data$`Classifier error`[which(data$`Block set` == "Block 2")]
+vector_2 <- data$`Classifier error`[which(data$`Block set` == "Block 3")]
+t.test(vector_1, vector_2, alternative = "two.sided")
+
+mean(data$`Classifier error`[which(data$`Block set` == "Block 1")])
+sd(data$`Classifier error`[which(data$`Block set` == "Block 1")])
+
+mean(data$`Classifier error`[which(data$`Block set` == "Block 2")])
+sd(data$`Classifier error`[which(data$`Block set` == "Block 2")])
+
+mean(data$`Classifier error`[which(data$`Block set` == "Block 3")])
+sd(data$`Classifier error`[which(data$`Block set` == "Block 3")])

@@ -24,7 +24,7 @@ custom.t.test <- function(beta_hat, se_beta_hat, mu_0, df) {
 }
 
 #Import data
-data <- read.csv("results/results.csv")[,-c(1)]
+data <- read.csv("results_ijrs/results.csv")[,-c(1)]
 
 #Rename and reorder map scale levels
 data$mapscale <- factor(data$mapscale, 
@@ -55,21 +55,20 @@ data$scaleandlevel <- factor(data$scaleandlevel,
 
 #Convert to factor variables and specify level order
 data$resolution <- factor(data$resolution, levels = c("high","medium","low"), labels = c("1.5 \u00D7 1.5", "3 \u00D7 3", "6 \u00D7 6"))
-data$nodesize <- factor(data$nodesize, levels = c("0.5","0.25","0.1"), labels = c("50","25","1"))
+data$nodesize <- factor(data$nodesize, levels = c("0.999","0.5","0.001"), labels = c("High","Intermediate","Low"))
 data$samplesize <- factor(data$samplesize, levels = c("35","350","3500"), labels = c("1","10","100"))
-data$ensemble <- factor(data$ensemble, levels = c("1","2","3","4","5","6","7"), labels = c("25","25","25","25","50","50","100"))
 data$outlierfiltering <- factor(data$outlierfiltering, levels = c("0","1"), labels = c("No","Yes"))
 
 #Rename columns
-colnames(data) <- c("Node size","Outlier filtering", "Interpreter", "Hierarchical level", "Spatial resolution", "Sampling density", "Sampling extent", "Map scale", "Thematic detail", 
-                    "Experience level", "Out-of-bag", "Classifier error", "Classifier ED", "Sample size", "Outliers", "Computation time", "Classifier classes", "Interpreter error", "Interpreter ED",
-                    "Interpreter classes", "Error propagation", "ED propagation", "Thematic resolution", "Hierarchical level - map scale")
+colnames(data) <- c("Method","Node size","Outlier filtering", "Interpreter", "Hierarchical level", "Spatial resolution", "Sampling density", "Map scale", "Thematic detail", 
+                    "Experience level", "Out-of-bag", "Classifier error", "Classifier ED", "Classifier classes", "Sample size", "Outliers", "Traning distance", "Validation distance", 
+                    "Computation time", "Interpreter error", "Interpreter ED", "Interpreter classes", "Error propagation", "ED propagation", "Thematic resolution", "Hierarchical level - map scale")
 
 #Specify names of x-axes
-legend_names <- c("Sampling extent (%)", "Sampling density (%)", "Spatial resolution (m)", "Outlier filtering", "Node size (%)")
+legend_names <- c("Sampling density (%)", "Spatial resolution (m)", "Outlier filtering", "Node size (%)")
 
 #Fit the linear model using the formula
-model <- lm(`Classifier error` ~ `Thematic resolution` * `Interpreter error`, data)
+model <- lm(`Classifier error` ~ `Hierarchical level` * `Interpreter error`, data)
 
 #Create a model summary
 summary_model <- summary(model)
@@ -77,7 +76,7 @@ print(summary_model)
 
 #With separation between thematic resolution
 res_var <- "`Classifier error`"
-exp_var <- c("`Sampling extent`","`Sampling density`","`Spatial resolution`","`Outlier filtering`","`Node size`")
+exp_var <- c("`Sampling density`","`Spatial resolution`","`Outlier filtering`","`Node size`")
 int_var1 <- "`Interpreter error`"
 effect_size_list <- list(list(),list(),list())
 trend_list <- list(list(),list(),list())
@@ -98,9 +97,9 @@ se_est <- numeric()
 lower_ci <- numeric()
 upper_ci <- numeric()
 
-for (j in 1:length(levels(data$`Thematic resolution`))) {
+for (j in 1:length(levels(data$`Hierarchical level`))) {
   
-  data_subset <- data[which(data$`Thematic resolution` == levels(data$`Thematic resolution`)[j]),]
+  data_subset <- data[which(data$`Hierarchical level` == levels(data$`Hierarchical level`)[j]),]
   
   #Construct the formula as a string
   formula_string <- paste(res_var,"~", int_var1)
@@ -120,7 +119,7 @@ for (j in 1:length(levels(data$`Thematic resolution`))) {
   se_est[j] <- summary_model$coefficients[2,2]
   lower_ci[j] <- means_est[j] - (1.96*se_est[j])
   upper_ci[j] <- means_est[j] + (1.96*se_est[j])
-
+  
   for (i in 1:length(exp_var)) {
     
     #Replace non-alphanumeric characters with underscores
@@ -168,7 +167,7 @@ for (j in 1:length(levels(data$`Thematic resolution`))) {
     lower_list[[j]][[i]] <- model_trends$`lower.CL`
     var_list[[j]][[i]] <- rep(current_exp_var,length(levels(model_trends[,current_exp_var])))
     level_list[[j]][[i]] <- levels(model_trends[,current_exp_var])
-    group_list[[j]][[i]] <- rep(levels(data$`Thematic resolution`)[j],length(levels(model_trends[,current_exp_var])))
+    group_list[[j]][[i]] <- rep(levels(data$`Hierarchical level`)[j],length(levels(model_trends[,current_exp_var])))
     means_est_list[[j]][[i]] <- rep(means_est[j],length(levels(model_trends[,current_exp_var])))
     upper_est[[j]][[i]] <- rep(upper_ci[j],length(levels(model_trends[,current_exp_var])))
     lower_est[[j]][[i]] <- rep(lower_ci[j],length(levels(model_trends[,current_exp_var])))
@@ -190,58 +189,67 @@ for (j in 1:length(levels(data$`Thematic resolution`))) {
 trend_data <- data.frame("Interpreter.error trend" = unlist(trend_list), 
                          upper.CL = unlist(upper_list), lower.CL = unlist(lower_list), 
                          exp_var = unlist(var_list), level = unlist(level_list), 
-                         group = unlist(group_list), level_indicator = rep(1:14,2),
+                         group = unlist(group_list), level_indicator = rep(1:11,3),
                          means_est = unlist(means_est_list), upper_ci = unlist(upper_est),
                          lower_ci = unlist(lower_est), p_values = unlist(p_est))
 
 #Rename and reorder hierarchical levels
 trend_data$exp_var <- factor(trend_data$exp_var, 
-                             levels = c("Sampling extent","Sampling density","Spatial resolution","Outlier filtering","Node size"))
+                             levels = c("Sampling density","Spatial resolution","Outlier filtering","Node size"))
 
 trend_data$level_indicator <- factor(trend_data$level_indicator)
 
 #Create a new variable that combines level and group to ensure unique labels
 trend_data <- trend_data %>% mutate(combined_label = interaction(exp_var, level, sep = " - "))
 trend_data$combined_label <- factor(trend_data$combined_label, 
-                                    levels = c("Node size - 50", "Node size - 25", "Node size - 1", "Outlier filtering - No", "Outlier filtering - Yes", "Spatial resolution - 6 \u00D7 6", "Spatial resolution - 3 \u00D7 3", "Spatial resolution - 1.5 \u00D7 1.5", "Sampling density - 1", "Sampling density - 10", "Sampling density - 100", "Sampling extent - 25", "Sampling extent - 50", "Sampling extent - 100"))
+                                    levels = c("Node size - 50", "Node size - 25", "Node size - 1", "Outlier filtering - No", "Outlier filtering - Yes", "Spatial resolution - 6 \u00D7 6", "Spatial resolution - 3 \u00D7 3", "Spatial resolution - 1.5 \u00D7 1.5", "Sampling density - 1", "Sampling density - 10", "Sampling density - 100"))
 
 #Rename and reorder hierarchical levels
 trend_data$group <- factor(trend_data$group, 
                            levels = c("Major type/mapping unit","Major-type group"))
 
 #Specify names of x-axes
-legend_names <- c("Sampling extent (%)", "Sampling density (%)", "Spatial resolution (m)", "Outlier filtering", "Node size (%)")
-x_axis_names <- c("50", "25", "1", "No", "Yes", "6 \u00D7 6", "3 \u00D7 3", "1.5 \u00D7 1.5", "1", "10", "100", "25", "50", "100")
+legend_names <- c("Sampling density (%)", "Spatial resolution (m)", "Outlier filtering", "Node size (%)")
+x_axis_names <- c("50", "25", "1", "No", "Yes", "6 \u00D7 6", "3 \u00D7 3", "1.5 \u00D7 1.5", "1", "10", "100")
 x_axis_names <- rev(x_axis_names)
 
+trend_data <- trend_data %>%
+  mutate(y_adjusted = case_when(
+    group == "Major-type group" ~ as.numeric(as.factor(combined_label)) + 0.2,  # Shift up
+    group == "Major type/mapping unit" ~ as.numeric(as.factor(combined_label)) - 0.2,  # Shift down
+    TRUE ~ as.numeric(as.factor(combined_label))  # No adjustment
+  ))
+
 #Create the ggplot
-error_propagation <- ggplot(trend_data, aes(x = `Interpreter.error.trend`, y = combined_label)) +
-  geom_rect(aes(xmin = lower_ci, xmax = upper_ci, ymin = 0, ymax = 14.5), fill = "gray", alpha = 0.3) +
+error_propagation <- ggplot(trend_data, aes(x = `Interpreter.error.trend`, y = y_adjusted)) +
+  geom_rect(aes(xmin = lower_ci, xmax = upper_ci, ymin = 0, ymax = 11.5), fill = "gray", alpha = 0.3) +
   scale_y_discrete(labels = function(y) gsub(".*-\\s*", "", y)) +
-  geom_segment(data = trend_data, aes(x = means_est, xend = means_est, y = 0, yend = 14.5), 
+  geom_segment(data = trend_data, aes(x = means_est, xend = means_est, y = 0, yend = 11.5), 
                linetype = "dotted", color = "black", size = 0.5) +
   geom_point(size = 3, shape = 19) +
   geom_errorbar(aes(xmin = `lower.CL`, xmax = `upper.CL`), width = 0.05, size = 1) +
   theme_minimal() +
-  annotate("text", x = means_est, y = 14.95, label = levels(trend_data$group), size = 5, color = "black", fontface = "bold") +
-  annotate("text", x = -0.10, y = 14:1, label = x_axis_names, size = 4, color = "black", hjust = 0, vjust = 0.5) +
-  annotate("text", x = 0.25, y = -0.5, label = "Estimated effect of interpreter error on classifier error", size = 5, color = "black", hjust = 0.5, vjust = 0.5) +
-  geom_text(aes(x = ifelse(group == "Major-type group", upper_ci + 0.155, upper_ci + 0.075), 
+  annotate("text", x = means_est, y = 11.95, label = levels(trend_data$group), size = 5, color = "black", fontface = "bold") +
+  annotate("text", x = -0.05, y = 11:1, label = x_axis_names, size = 4, color = "black", hjust = 0, vjust = 0.5) +
+  annotate("text", x = 0.15, y = -0.5, label = "Estimated effect of interpreter error on classifier error", size = 5, color = "black", hjust = 0.5, vjust = 0.5) +
+  geom_text(aes(x = ifelse(group == "Major-type group", upper_ci + 0.12, upper_ci + 0.03), 
                 label = sprintf("italic(p) == %.3f", p_values)), parse = TRUE, size = 4, hjust = 0, vjust = 0.5)  +
-  annotate("text", x = -0.27, y = c(14,11,8,5,3), label = legend_names, size = 5, color = "black", fontface = "bold", hjust = 0, vjust = 0.5) +
-  annotate("text", x = c(0.0,0.1,0.2,0.3,0.4,0.5), y = -0.25, label = c("0.0","0.1","0.2","0.3","0.4","0.5"), size = 4, color = "black", hjust = 0.5, vjust = 0) +
-  coord_cartesian(ylim = c(0, 14.5), xlim = c(-0.24,0.60)) + 
+  annotate("text", x = -0.15, y = c(11,8,5,3), label = legend_names, size = 5, color = "black", fontface = "bold", hjust = 0, vjust = 0.5) +
+  annotate("text", x = c(0.0,0.1,0.2,0.3), y = -0.25, label = c("0.0","0.1","0.2","0.3"), size = 4, color = "black", hjust = 0.5, vjust = 0) +
+  coord_cartesian(ylim = c(0, 11.5), xlim = c(-0.30,1.0)) + 
   theme(strip.text = element_text(hjust = 0.5),
-        axis.text.x = element_blank(), # Increase x-axis text size
-        axis.text.y = element_blank(), # Increase y-axis text size and set alignment
-        axis.title.x = element_blank(), # Increase x-axis label text size
-        axis.title.y = element_blank(), # Adjust y-axis title orientation and alignment
-        panel.grid.major = element_blank(), # Remove major gridlines
-        panel.grid.minor = element_blank(), # Align legend text to the left 
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
         panel.spacing = unit(0, "cm"))
+
+error_propagation
 
 plot_width <- 12
 plot_height <- 17
 
 #Save the plot
-ggsave("error_propagation.png", plot = error_propagation, width = plot_width, height = plot_height, dpi = 300, limitsize = FALSE)
+ggsave("error_propagation6.png", plot = error_propagation, width = plot_width, height = plot_height, dpi = 300, limitsize = FALSE)
